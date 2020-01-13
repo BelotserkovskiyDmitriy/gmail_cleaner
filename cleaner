@@ -1,0 +1,79 @@
+#Скрипт для очистки Gmail в разделах "Промоакции" и "Оповещения"
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+#Авторизация в профиль гугл
+def authorization():
+    fill_email = browser.find_element(By.CSS_SELECTOR, "input[type='email']")
+    fill_email.send_keys("EMAIL")
+
+    next_link = browser.find_element(By.XPATH, "//*[@id='identifierNext']/span/span")
+    next_link.click()
+
+    fill_password = browser.find_element(By.XPATH, "//*[@id='password']/div[1]/div/div[1]/input")
+    fill_password.send_keys("PASSWORD")
+
+    next_link2 = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.XPATH, "//*[@id='passwordNext']/span/span")))
+    next_link2.click()
+
+#Подсчет кол-ва сообщений
+def quantity_of_messages():
+    amount_of_letters = browser.find_element(By.XPATH, "/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[1]/div/div[1]/div[2]/div[1]/span/div[1]/span/span[2]")
+    print("Сообщений в разделе - " + amount_of_letters.text)
+
+    fix = str(amount_of_letters.text)
+    b = fix.split()
+    b = ''.join(b)
+
+    int_amount_of_letters = int(b)
+    return int_amount_of_letters
+
+#Подсчет страниц с сообщениями (1стр - 50 сообщений)
+def quantity_of_pages(messages):
+    pages_of_sm = messages / 50  #675 / 50 = 13.5
+    if pages_of_sm is int:
+        print("Соотношение кол-ва писем к стр - идеальное... =)")
+    else:
+        pages_of_sm = int(pages_of_sm) + 1
+        str_p = str(pages_of_sm)
+        print(str_p + " страниц мусора")
+    return pages_of_sm
+
+#Удаление сообщений
+def delete_mes(pages):
+    for i in range(pages):
+        wait = WebDriverWait(browser, 10)
+        time.sleep(2)
+        select_all_btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "span[role='checkbox']")))
+        select_all_btn.click()
+        delete_btn = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[1]/div/div[1]/div[1]/div/div/div[2]/div[3]/div")))
+        delete_btn.click()
+        time.sleep(3)
+    print("Весь мусор удален.")
+
+
+try:
+    browser = webdriver.Chrome()
+    browser.implicitly_wait(10)
+    link = "https://mail.google.com/mail/u/0/#inbox"
+    browser.get(link)
+
+    authorization()
+
+    wait = WebDriverWait(browser, 10)
+    promotions = wait.until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[7]/div[3]/div/div[2]/div[1]/div[2]/div/div/div/div/div[2]/div/div[1]/div/div/div[3]/table/tbody/tr[1]/td[3]/div/div[5]")))
+    promotions.click()
+
+    messages = quantity_of_messages()
+    pages = quantity_of_pages(messages)
+    delete_mes(pages)
+    time.sleep(3)
+
+
+
+finally:
+    print("Усё =)")
+    browser.quit()
